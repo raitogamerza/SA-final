@@ -1,0 +1,622 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>ติว Final Software Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: blueprint sheet — sticky tab bar, single reading column, reference tables scroll in place */
+:root{
+  --paper:#f5f7fb; --sheet:#ffffff; --ink:#16213a; --muted:#5a6680; --line:#d9e0ec; --grid:rgba(43,74,203,.05);
+  --accent:#2b4acb; --accent-soft:#e7ecfb; --ok:#1d7a4f; --ok-soft:#e3f4ea; --bad:#b3362c; --bad-soft:#fbe7e4; --mark:#fff2c4;
+  --display:"Bai Jamjuree","IBM Plex Sans Thai",system-ui,sans-serif;
+  --body:"IBM Plex Sans Thai",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0e1424; --sheet:#151d32; --ink:#e4e9f5; --muted:#9aa6c2; --line:#2a3550; --grid:rgba(120,150,255,.05);
+  --accent:#8ea4ff; --accent-soft:#1f2a4d; --ok:#5fd19a; --ok-soft:#13301f; --bad:#ff8a7e; --bad-soft:#3a1a18; --mark:#3a3216; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0e1424; --sheet:#151d32; --ink:#e4e9f5; --muted:#9aa6c2; --line:#2a3550; --grid:rgba(120,150,255,.05);
+  --accent:#8ea4ff; --accent-soft:#1f2a4d; --ok:#5fd19a; --ok-soft:#13301f; --bad:#ff8a7e; --bad-soft:#3a1a18; --mark:#3a3216; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:16px/1.7 var(--body);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--sheet)}
+.wrap{max-width:920px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:36px 20px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h1{font:700 clamp(28px,5vw,42px)/1.2 var(--display);margin:10px 0 8px;text-wrap:balance}
+.sub{color:var(--muted);margin:0}
+.weights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:22px}
+.w{background:var(--sheet);border:1px solid var(--line);padding:14px 16px}
+.w b{font:700 28px/1 var(--display);color:var(--accent);font-variant-numeric:tabular-nums}
+.w span{display:block;font-size:14px;color:var(--muted);margin-top:6px}
+@media(max-width:560px){.weights{grid-template-columns:1fr}}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--sheet);border-block:1px solid var(--line)}
+nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto}
+nav.tabs button{font:600 15px var(--display);background:none;border:0;color:var(--muted);padding:14px 14px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--accent)}
+nav.tabs button:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:28px 80px}
+section.pane{display:flex;flex-direction:column;gap:22px}
+h2{font:700 24px/1.3 var(--display);margin:0;text-wrap:balance}
+h3{font:600 19px/1.35 var(--display);margin:0 0 8px}
+.card{background:var(--sheet);border:1px solid var(--line);padding:20px 22px;min-width:0}
+.card p{margin:0 0 10px}
+.card ul{margin:0;padding-left:20px}
+.card li{margin:2px 0}
+.tag{display:inline-block;font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:5px 7px;margin-bottom:10px}
+.hot{background:var(--mark);padding:0 3px}
+.tbl{overflow-x:auto;margin:10px 0 4px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:480px}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--accent-soft);font-weight:600}
+td.c{text-align:center;font-variant-numeric:tabular-nums}
+code,.mono{font-family:var(--mono);font-size:.92em}
+.note{color:var(--muted);font-size:14px}
+/* toolbar */
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;background:var(--sheet);border:1px solid var(--line);padding:12px 16px}
+.score{font:700 20px var(--display);font-variant-numeric:tabular-nums}
+.btn{font:600 14px var(--body);border:1px solid var(--accent);background:var(--accent);color:var(--sheet);padding:8px 14px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.filters{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 13px var(--body);border:1px solid var(--line);background:var(--sheet);color:var(--muted);padding:4px 10px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+/* mcq */
+.q{background:var(--sheet);border:1px solid var(--line);padding:18px 20px}
+.q .meta{display:flex;justify-content:space-between;gap:10px;font:500 12px var(--mono);color:var(--muted);margin-bottom:6px}
+.q .stem{font-weight:500;margin:0 0 12px}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;gap:10px;align-items:flex-start;text-align:left;font:15px/1.55 var(--body);color:var(--ink);background:transparent;border:1px solid var(--line);padding:8px 12px;cursor:pointer;width:100%}
+.opt .L{font:600 13px/1.9 var(--mono);color:var(--muted);min-width:16px}
+.opt:hover:not([disabled]){border-color:var(--accent)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.right .L{color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt.wrong .L{color:var(--bad)}
+.opt[disabled]{cursor:default}
+.exp{margin-top:10px;font-size:14.5px;border-left:3px solid var(--line);padding-left:12px;color:var(--muted)}
+.exp b{color:var(--ink)}
+/* fill */
+.bank{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:4px 12px;font-size:14.5px}
+.bank span{font-variant-numeric:tabular-nums}
+.bank i{font-style:normal;font:500 13px var(--mono);color:var(--accent);display:inline-block;min-width:24px}
+.fill{display:grid;grid-template-columns:auto 72px minmax(0,1fr);gap:10px 12px;align-items:start}
+.fill .n{font:600 14px/2.3 var(--mono);color:var(--muted)}
+.fill input{width:72px;font:600 16px var(--mono);padding:6px 8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);text-align:center}
+.fill input.right{border-color:var(--ok);background:var(--ok-soft)}
+.fill input.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.fill .s{line-height:1.6;padding-top:5px}
+.fill .fb{display:block;font-size:13.5px;color:var(--muted)}
+/* essay */
+textarea{width:100%;min-height:150px;font:15px/1.6 var(--body);padding:10px 12px;border:1px solid var(--line);background:var(--paper);color:var(--ink);resize:vertical}
+details{border-top:1px solid var(--line);margin-top:14px;padding-top:10px}
+summary{cursor:pointer;font:600 15px var(--display);color:var(--accent)}
+.ans{margin-top:10px}
+.ans h4{font:600 16px var(--display);margin:14px 0 4px}
+.scen{background:var(--accent-soft);padding:14px 16px;margin:8px 0 14px}
+.parts{margin:0;padding-left:22px}
+@media(prefers-reduced-motion:no-preference){.opt,.chip,nav.tabs button{transition:border-color .15s,background .15s}}
+</style>
+
+<header class="top wrap">
+  <div class="eyebrow">040613305 · ภาคเรียน 1/2569 · Final</div>
+  <h1>ติวสอบ Final: Software Architecture</h1>
+  <p class="sub">สรุปเนื้อหาตามโครงข้อสอบ Week 8–12 พร้อมข้อสอบจำลองครบ 3 ส่วน สอบ 09:00–12:00 รวม 90 คะแนน</p>
+  <div class="weights">
+    <div class="w"><b>50</b><span>ส่วนที่ 1 ปรนัย 100 ข้อ (A–E) ข้อละ 0.5</span></div>
+    <div class="w"><b>15</b><span>ส่วนที่ 2 เติมคำ 15 ข้อ คลังคำ 30 คำ ตอบเป็นหมายเลข</span></div>
+    <div class="w"><b>25</b><span>ส่วนที่ 3 อัตนัย 2 ข้อ (EDA+CQRS 10 / ประเมินสถาปัตยกรรม 15)</span></div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="ส่วนของหน้า">
+  <div class="wrap" role="tablist">
+    <button role="tab" data-tab="summary" id="t-summary">สรุปเนื้อหา</button>
+    <button role="tab" data-tab="mcq" id="t-mcq">ปรนัย</button>
+    <button role="tab" data-tab="fill" id="t-fill">เติมคำ</button>
+    <button role="tab" data-tab="essay" id="t-essay">อัตนัย</button>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- ================= SUMMARY ================= -->
+<section class="pane" id="summary">
+  <h2>สรุปเนื้อหาที่ออกสอบ</h2>
+  <p class="note" style="margin:0">ไฮไลต์สีเหลือง = จุดที่โครงข้อสอบระบุไว้ตรง ๆ ให้จำเป็นพิเศษ หัวข้อที่ระบุจำนวนข้อชัดเจนมี Microservices/Distributed 7 ข้อ และ ATAM/แนวปฏิบัติ 10 ข้อ</p>
+
+  <div class="card">
+    <span class="tag">Week 8 · MVC</span>
+    <h3>Model–View–Controller</h3>
+    <ul>
+      <li>คิดค้นโดย <span class="hot">Trygve Reenskaug ปี 1979 ที่ Xerox PARC</span> สำหรับ Smalltalk-76 เป้าหมายเดิมคือจัดการชุดข้อมูลใหญ่/ซับซ้อน และเชื่อม mental model ของคนกับ GUI</li>
+      <li><b>Model</b> = ข้อมูล + business logic + กฎ ติดต่อ DB ทำงานได้เองแม้ถอด View/Controller ออก (ไม่ใช่แค่ “ตัวจัดการ DB”)</li>
+      <li><b>View</b> = แสดงผล (render แบบ dynamic) รับ action ผู้ใช้แล้วส่งต่อให้ Controller มีหลาย view ของข้อมูลเดียวกันได้</li>
+      <li><b>Controller</b> = ตัวกลาง รับ input → เรียก Model → เลือก View <span class="hot">“Never handles data logic”</span></li>
+      <li>ปัญหาที่ป้องกัน: <b>high coupling</b> → โค้ดแข็งทื่อ ซับซ้อน ประโยชน์: Separation of Concerns, Maintainability, Testability (ทดสอบ Model ได้โดยไม่ต้องมี UI), Team Collaboration/Scalability (frontend-backend ทำขนานกัน)</li>
+      <li>โครงโฟลเดอร์: <code>models/ views/ controllers/ routes/ config/ public/</code> เทียบเว็บพื้นฐาน HTML=content, CSS=presentation, JS=behavior</li>
+      <li>กรณี E-commerce: checkout ไฟล์เดียว 2,500 บรรทัด มีทั้ง SQL, ส่วนลด/ค่าส่ง, เรียก payment API, ต่อ HTML → แยกเป็น Model (Order, Cart, PaymentProcessor), View (template), Controller บาง ๆ</li>
+      <li>แบบฝึก C++: <code>StudentController</code> ถือ model และ view ไว้ View ไม่แตะ Model ตรง ๆ ถ้าเปลี่ยนจาก <code>cout</code> เป็นหน้าเว็บ แก้แค่ <b>StudentView</b> เพิ่ม GPA ต้องแก้ทั้ง 3 คลาส</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="tag">Week 9 · Cloud</span>
+    <h3>Cloud Architecture</h3>
+    <ul>
+      <li>องค์ประกอบ: Front-end, Back-end, Network, Delivery model (SaaS/PaaS/IaaS)</li>
+      <li><b>Infrastructure as hardware</b>: ต้องมีพื้นที่ คน ความปลอดภัยทางกายภาพ ลงทุนก้อนใหญ่ จัดซื้อนาน ต้องเดา peak สูงสุด / <b>as software</b>: ยืดหยุ่น เปลี่ยนเร็ว ถูกกว่า ตัดงานหนักที่ไม่สร้างความต่าง</li>
+    </ul>
+    <div class="tbl"><table>
+      <tr><th>โมเดล</th><th>ลูกค้าดูแล</th><th>ผู้ให้บริการดูแล</th></tr>
+      <tr><td>On-premises</td><td>ทุกอย่าง</td><td>–</td></tr>
+      <tr><td>IaaS (เช่าฮาร์ดแวร์)</td><td>Applications, Data, Runtime, Middleware, <span class="hot">O/S</span></td><td>Virtualization, Servers, Storage, Networking</td></tr>
+      <tr><td>PaaS (เช่า platform)</td><td><span class="hot">Applications, Data</span></td><td>Runtime ลงไปทั้งหมด</td></tr>
+      <tr><td>SaaS (ใช้แอปสำเร็จ)</td><td>ผู้ใช้และข้อมูลของตน</td><td>ทุกชั้น</td></tr>
+    </table></div>
+    <ul>
+      <li>Deployment: <b>Public</b> (แชร์ ผู้ให้บริการรายที่ 3), <b>Private</b> (องค์กรเดียว), <b>Hybrid</b> (public+private มี orchestration), <b>Multi-Cloud</b> (หลายเจ้า <span class="hot">เลี่ยง vendor lock-in</span>)</li>
+      <li>Design principles: Scalability &amp; Elasticity, Design for Failure, Security (least privilege, zero-trust, encrypt at rest/in transit), Performance, Cost Optimization, Automation</li>
+      <li><b>Well-Architected 6 เสา</b>: Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization, Sustainability</li>
+      <li>Serverless: โค้ดรันตาม event, provider จัดการ server/scaling (AWS Lambda, Azure Functions, Google Cloud Functions)</li>
+      <li><b>Vertical (scale up)</b> เพิ่ม CPU/RAM เครื่องเดิม ง่ายแต่ติดเพดานฮาร์ดแวร์ เหมาะ DB/legacy · <b>Horizontal (scale out)</b> เพิ่มเครื่อง ต้อง stateless + load balancer · <b>Elasticity</b> เพิ่ม/ลดอัตโนมัติ (auto-scaling, Kubernetes HPA)</li>
+      <li>รับมือความล้มเหลว: Multi-AZ, Load Balancing (health check), Data Replication, Auto-Recovery, <b>Circuit Breaker</b> (กัน cascading failure), <b>Chaos Engineering</b> (ใส่ความล้มเหลวโดยตั้งใจ เช่น Chaos Monkey)</li>
+      <li>Shared Responsibility: provider ดูแลโครงสร้างพื้นฐาน เราดูแลข้อมูล แอป และ configuration · ชั้นความปลอดภัย: Physical → Network (VPC, Firewall) → IAM → Application → Data (Encryption)</li>
+      <li>Networking: VPC, Subnet + Security Group (firewall ระดับ instance), LB + CDN, DNS + Service Mesh · Data: SQL (RDS), NoSQL (DynamoDB), Object (S3), Warehouse (BigQuery), Cache (ElastiCache), Data Lake</li>
+      <li><b>Observability 3 pillars</b>: metrics, logs, traces · IaC: Terraform, CloudFormation, Pulumi · GitOps: Git เป็น single source of truth</li>
+      <li>Migration (6R): <b>Rehost</b> (lift-and-shift), <b>Replatform</b> (ปรับเล็กน้อย), <b>Repurchase</b> (ย้ายไป SaaS เช่น CRM→Salesforce), <b>Refactor</b> (re-architect, ลงแรงมากสุด ได้ประโยชน์มากสุด), <b>Retire</b>, <b>Retain</b></li>
+      <li>ลดต้นทุน: Right-sizing, Auto-scaling, Reserved (สัญญา 1–3 ปี ลดได้ถึง 72%) &amp; Spot, Budgets/alerts, Storage tiering (S3 Glacier), Architecture review</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="tag">Week 10 · Grid &amp; Edge</span>
+    <h3>Grid Computing</h3>
+    <p>เชื่อมคอมพิวเตอร์อิสระหลายเครื่องผ่านเครือข่ายให้ทำงานเป็น virtual supercomputer เดียว</p>
+    <div class="tbl"><table>
+      <tr><th>ชั้น (บน→ล่าง)</th><th>หน้าที่</th></tr>
+      <tr><td>Application</td><td>โปรแกรมผู้ใช้/simulation ส่งความต้องการงานลงไป ไม่จัดการฮาร์ดแวร์</td></tr>
+      <tr><td><span class="hot">Collective</span></td><td>ค้นหาทรัพยากร (directory), จัดตารางงาน, กระจายโหลด, monitoring, data replication</td></tr>
+      <tr><td>Resource</td><td>ควบคุม/ติดตามเครื่องแต่ละเครื่อง จัดสรร CPU, memory, storage</td></tr>
+      <tr><td>Connectivity</td><td>authentication, โปรโตคอลสื่อสาร (TLS)</td></tr>
+      <tr><td>Fabric</td><td>ฮาร์ดแวร์จริง CPU, storage, network, instrument</td></tr>
+    </table></div>
+    <ul>
+      <li>ประเภท: <b>Computational</b> (รวมพลังประมวลผล), <b>Data</b> (รวม storage ให้แชร์ dataset ใหญ่), <b>Collaborative</b> (ทำงานร่วมกันแบบ real-time)</li>
+      <li>ใช้งาน: CERN LHC (WLCG 170+ ไซต์ 42 ประเทศ ~1 EB/ปี), ค้นยา/พันธุกรรม, พยากรณ์อากาศ · ลักษณะ: Batch/HPC, cross-org sharing, centralized scheduling, standards-driven, high throughput</li>
+    </ul>
+    <h3 style="margin-top:16px">Edge Computing</h3>
+    <ul>
+      <li>3 ชั้น: <b>Device</b> (sensor, กล้อง สร้างข้อมูลดิบ) → <b>Edge</b> (gateway/server ใกล้แหล่ง กรองและวิเคราะห์ real-time) → <b>Cloud</b> (เก็บระยะยาว, big-data, train ML)</li>
+      <li>Patterns: <b>IoT Gateway</b> (รวม/กรองแล้วส่งสรุป <span class="hot">ลด bandwidth ได้ถึง 90%</span>), <b>CDN</b>, <b>Real-Time Inference</b> (รัน ML ที่ edge เช่นรถไร้คนขับ), <b>Fog Computing</b> (device → fog node → cloud ประมวลผลเท่าที่ทำได้ ส่งต่อเฉพาะที่จำเป็น)</li>
+    </ul>
+    <div class="tbl"><table>
+      <tr><th>มิติ</th><th>Edge</th><th>Cloud</th></tr>
+      <tr><td>Latency</td><td>ต่ำมาก 1–10 ms</td><td>แปรผัน 50–200 ms</td></tr>
+      <tr><td>Data processing</td><td>Local (บนอุปกรณ์)</td><td>Data center ส่วนกลาง</td></tr>
+      <tr><td>Bandwidth</td><td>ใช้ WAN น้อย</td><td>อัปโหลดหนัก</td></tr>
+      <tr><td>Scalability</td><td>กระจายระดับอุปกรณ์</td><td>Elastic แทบไม่จำกัด</td></tr>
+      <tr><td>Cost model</td><td>ฮาร์ดแวร์ + บำรุงรักษา</td><td>Pay-per-use</td></tr>
+      <tr><td>เหมาะกับ</td><td>Real-time, latency-sensitive</td><td>Batch, analysis, storage</td></tr>
+    </table></div>
+  </div>
+
+  <div class="card">
+    <span class="tag">Week 10 · 7 ข้อ</span>
+    <h3>Microservices &amp; Distributed</h3>
+    <ul>
+      <li>Microservices: แบ่งแอปเป็นบริการเล็กอิสระตาม business capability สื่อสารผ่าน API/message broker deploy และ scale แยกได้ ใช้เทคโนโลยีต่างกันได้</li>
+      <li>การจัดการข้อมูล: <span class="hot">Database per Microservice</span> → data isolation, loose coupling, scale อิสระ (polyglot persistence)</li>
+      <li>ส่วนประกอบ: <b>API Gateway</b> (จุดเข้าเดียว route + auth), <b>Service Registry &amp; Discovery</b>, <b>Load Balancer</b>, <b>Docker/Kubernetes</b>, <b>Event Bus/Message Broker</b> (async), <b>Caching</b>, <b>Fault tolerance</b> (circuit breaker, retry, fallback)</li>
+    </ul>
+    <div class="tbl"><table>
+      <tr><th>สถานการณ์</th><th>เลือก</th></tr>
+      <tr><td>แอปเล็กเรียบง่าย · ทีมน้อย · ความซับซ้อนการดำเนินงานต่ำ · ไม่คาดว่าจะเปลี่ยนบ่อย</td><td><b>Monolith</b></td></tr>
+      <tr><td>Deploy/iterate เร็ว · scalability และ fault isolation สูง · หลาย tech stack · ตลาด/ผลิตภัณฑ์เปลี่ยนเร็ว</td><td><b>Microservices</b></td></tr>
+    </table></div>
+    <ul>
+      <li>คุณลักษณะระบบกระจาย: Multiple Nodes, Resource Sharing, Scalability, Fault Tolerance, <b>Transparency</b> (ซ่อนความซับซ้อน ดูเป็นระบบเดียว)</li>
+      <li><b>Peer-to-Peer</b>: ทุกโหนดเท่ากัน เป็นทั้ง client และ server ไม่มี central server ทนต่อ single point of failure มี 3 แบบ Structured / Unstructured / Hybrid</li>
+      <li>สไตล์อื่น: Layered, Data-Centric (shared repository/blackboard), SOA (ESB, SOAP/REST), Event-Based, Client-Server (server อาจเป็นคอขวด)</li>
+      <li><b>Netflix</b>: 700+ microservices บน AWS · <span class="hot">Zuul</span>=gateway · <span class="hot">Eureka</span>=discovery · <span class="hot">Hystrix</span>=circuit breaker · <span class="hot">Chaos Monkey</span>=resilience testing (247M สมาชิก, 15% ทราฟฟิกโลก)</li>
+      <li>Tesla Autopilot = Edge + Cloud hybrid (&lt;100 ms decision loop) · CERN = Grid</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="tag">Week 11 · EDA</span>
+    <h3>Event-Driven Architecture</h3>
+    <ul>
+      <li>ส่วนประกอบสื่อสารโดยผลิตและตอบสนองต่อ event, loosely coupled</li>
+      <li><b>Event Source</b> สร้าง event · <b>Event</b> เหตุการณ์/การเปลี่ยนสถานะ · <b>Event Broker</b> ศูนย์กลางรับส่ง · <b>Publisher</b> ส่ง event ไป broker · <b>Subscriber</b> ลงทะเบียนสนใจ event บางชนิด</li>
+      <li>แผนภาพ: Source1 ส่ง A, Source2 ส่ง B → Subscriber1 รับ A, <span class="hot">Subscriber2 รับ A+B</span> (จากทั้งสอง source), Subscriber3 รับ B</li>
+      <li>Event: triggering, asynchronicity, publish-subscribe, event types (UserLoggedIn, OrderPlaced), <span class="hot">Payload</span> = ข้อมูลแนบ เช่น PaymentReceived แนบจำนวนเงิน, event handling</li>
+      <li>เมื่อไหร่ใช้: หลาย subsystem ต้องประมวล event เดียวกัน · real-time · complex event processing (pattern matching, time window) · ข้อมูลปริมาณ/ความเร็วสูง (IoT)</li>
+      <li>ใช้จริง: การเงิน (fraud), e-commerce, โทรคมนาคม, เกมออนไลน์</li>
+      <li>ความท้าทาย: ความซับซ้อนเพิ่ม, ลำดับและ consistency ของ event, <span class="hot">debugging และ tracing ยากเพราะ async + กระจาย</span>, event latency</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="tag">Week 11 · CQRS</span>
+    <h3>Command Query Responsibility Segregation</h3>
+    <ul>
+      <li>แยก <b>Command</b> (เขียน เปลี่ยนสถานะ มี side effect เช่น CreateOrder) ออกจาก <b>Query</b> (อ่าน ไม่เปลี่ยนสถานะ เช่น GetOrderDetails)</li>
+      <li>UI → Command Service → <span class="hot">Write Storage = source of truth</span> → Sync (มักใช้ event) → Read Storage (read-optimized / materialized view) ← Query Service</li>
+      <li>4 ขั้น sync: (1) เขียนลง Command DB (2) สร้าง event เช่น “Order Created” (3) Read DB ฟัง event แล้วอัปเดตสำเนา (4) <b>Eventual Consistency</b> อาจช้าเล็กน้อยแต่สุดท้ายตรงกัน</li>
+      <li>เหมาะ: query ซับซ้อน, ต้อง scale อ่าน/เขียนแยก, data model อ่าน/เขียนต่างกัน (read/write imbalance)</li>
+      <li>Best practices: แยก model ชัด, ใช้ async messaging กับ command, command/query เรียบง่ายไม่ปนกัน, <span class="hot">ระบบง่าย ๆ ใช้ CQRS = overkill</span></li>
+      <li>ความท้าทาย: complexity, consistency, data synchronization, performance overhead</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="tag">Week 11 · Tools</span>
+    <h3>เครื่องมือวาดแผนภาพ</h3>
+    <p>4 หมวด: Code-Based Diagramming · Visual Modeling &amp; Standards (UML, ArchiMate) · Sketching &amp; Brainstorming · System Security &amp; Infrastructure</p>
+    <ul>
+      <li><b>Graphviz</b>: engine ใช้ภาษา <b>DOT</b>, CLI เข้ากับ CI/CD, ไม่มี drag-and-drop</li>
+      <li><b>PlantUML</b>: เขียนโค้ดสร้าง UML (sequence, class, deployment) + ER, Gantt; engine เบื้องหลัง (Graphviz/Smetana) ทำให้ภาพต่างกันเล็กน้อย</li>
+      <li><b>D2</b>: DSL สมัยใหม่, containers + globs, ต้องใช้ CLI หรือ playground</li>
+      <li><b>Gaphor</b>: desktop app, ตามมาตรฐาน UML 2, <b>SysML</b>, RAAML, C4 เคร่งครัด, ต้องอัปเดตเอง</li>
+      <li><b>Mermaid</b> (แนะนำ): syntax คล้าย Markdown, Live Editor, ฝังใน GitHub/GitLab/Notion/Obsidian, code-first</li>
+      <li><b>Draw.io</b> (แนะนำ): drag-and-drop, template AWS/Azure/GCP/IBM, แก้ร่วม real-time (บน Google), ฝัง PlantUML/Mermaid ได้</li>
+    </ul>
+    <div class="tbl"><table>
+      <tr><th>Tool</th><th>Code/Text</th><th>Drag-and-Drop</th><th>Real-time collab</th><th>Web-based</th></tr>
+      <tr><td>Graphviz</td><td class="c">Yes</td><td class="c">No</td><td class="c">No</td><td class="c">No</td></tr>
+      <tr><td>PlantUML</td><td class="c">Yes</td><td class="c">No</td><td class="c">No</td><td class="c">Yes</td></tr>
+      <tr><td>D2</td><td class="c">Yes</td><td class="c">Playground only</td><td class="c">No</td><td class="c">Playground only</td></tr>
+      <tr><td>Gaphor</td><td class="c">No</td><td class="c">Yes</td><td class="c">No</td><td class="c">No</td></tr>
+      <tr><td>Mermaid</td><td class="c">Yes</td><td class="c">No</td><td class="c">Yes</td><td class="c">Yes</td></tr>
+      <tr><td>Draw.io</td><td class="c">Yes</td><td class="c">Yes</td><td class="c">Yes</td><td class="c">Yes</td></tr>
+    </table></div>
+  </div>
+
+  <div class="card">
+    <span class="tag">Week 12 · พื้นฐาน &amp; การประเมิน</span>
+    <h3>พื้นฐานสถาปัตยกรรมและเกณฑ์ประเมิน</h3>
+    <ul>
+      <li>องค์ประกอบพื้นฐาน: <b>Hardware, Software, Data</b> · สไตล์: Monolithic, Microservices, Event-Driven</li>
+      <li><span class="hot">Layers = จัดโค้ดเชิงตรรกะ · Tiers = deploy ทางกายภาพ</span> (Presentation / Application / Data layer, Client-Server, N-Tier)</li>
+      <li>สื่อสาร: API, Message Queue (async), ESB · Load balancing กันคอขวด</li>
+    </ul>
+    <div class="tbl"><table>
+      <tr><th>เกณฑ์</th><th>ตัวชี้วัดย่อย</th></tr>
+      <tr><td>Performance</td><td>Response time, <b>Throughput</b> (ธุรกรรม/หน่วยเวลา), <b>Latency</b> (ดีเลย์ก่อนเริ่มส่ง), Resource utilization</td></tr>
+      <tr><td>Scalability</td><td>Horizontal, Vertical, Elasticity</td></tr>
+      <tr><td>Reliability</td><td>Availability, Fault tolerance, Redundancy, Recoverability, Maturity</td></tr>
+      <tr><td>Maintainability</td><td>Modularity, Code quality, Documentation, Testability, Deployability, Modifiability</td></tr>
+      <tr><td>Security</td><td>Authentication, Authorization, Encryption, Compliance, Zero-Trust</td></tr>
+    </table></div>
+    <ul>
+      <li>Frameworks: TOGAF, Zachman, <span class="hot">PRR = quality gate ด่านสุดท้ายก่อนขึ้นระบบจริง</span> (load/chaos test), ATAM</li>
+      <li>Modeling: UML, SysML (ส่วนขยาย UML สำหรับ systems engineering), ER Diagram</li>
+      <li>Design Patterns: <b>Creational</b> (Singleton, Factory, Abstract Factory) · <b>Structural</b> (Adapter, Composite, Decorator) · <b>Behavioral</b> (Observer, Strategy, Command)</li>
+      <li>Methodologies: Agile, Waterfall, DevOps · Evaluation: Performance / Security / Usability testing</li>
+    </ul>
+    <div class="tbl"><table>
+      <tr><th>ประเมินด้าน</th><th>เครื่องมือ</th></tr>
+      <tr><td>Performance</td><td>Apache JMeter, LoadRunner, Gatling</td></tr>
+      <tr><td>Security</td><td>OWASP ZAP, Burp Suite, Nessus</td></tr>
+      <tr><td>Usability</td><td>UserTesting, Hotjar, Crazy Egg</td></tr>
+      <tr><td>Maintainability</td><td>SonarQube, Checkmarx (SAST), Code Climate</td></tr>
+      <tr><td>Documentation/Modeling</td><td>Microsoft Visio, Mermaid, Draw.io</td></tr>
+    </table></div>
+    <p class="note">ความท้าทาย→ทางแก้: ระบบซับซ้อน → UML/SysML + แยกส่วนประเมิน · คอขวด → JMeter/LoadRunner + profiling · scale → ทดสอบ + auto-scaling · ช่องโหว่ → ZAP/Nessus + audit สม่ำเสมอ</p>
+  </div>
+
+  <div class="card">
+    <span class="tag">Week 12 · 10 ข้อ</span>
+    <h3>ATAM และแนวปฏิบัติด้านสถาปัตยกรรม</h3>
+    <ul>
+      <li><b>ATAM</b> (SEI): ประเมิน quality attributes (performance, availability, security) เพื่อ<span class="hot">ลดความเสี่ยงตั้งแต่ช่วงต้นของ SDLC</span> หา trade-off points, sensitivity points, risks</li>
+      <li>3 กลุ่มผู้เข้าร่วม: <b>Evaluation team</b> (<span class="hot">คนนอกโปรเจกต์ 3–5 คน</span>) · <b>Project decision-makers</b> (มีอำนาจสั่งเปลี่ยน) · <b>Architecture stakeholders</b> (users, maintainers, performance engineers, testers, integrators, developers)</li>
+      <li>Risk = การตัดสินใจทางสถาปัตยกรรมที่<b>อาจ</b>นำไปสู่ผลไม่พึงประสงค์ต่อ quality attribute · Non-risk = ไม่คาดว่าจะเกิดผลเสีย · Risk themes = จุดอ่อนเชิงระบบ</li>
+    </ul>
+    <div class="tbl"><table>
+      <tr><th>#</th><th>ขั้นตอน ATAM (8 ขั้น)</th><th>สาระ</th></tr>
+      <tr><td class="c">1</td><td>Present ATAM</td><td>อธิบายกระบวนการให้ทุกคน ตอบคำถาม</td></tr>
+      <tr><td class="c">2</td><td>Present Business Drivers</td><td>เป้าหมาย ข้อจำกัด ฟังก์ชัน NFR</td></tr>
+      <tr><td class="c">3</td><td>Present Architecture</td><td>สถาปนิกเล่าภาพรวม อย่างน้อย module + component-and-connector views</td></tr>
+      <tr><td class="c">4</td><td>Identify Architectural Approaches</td><td>นำเสนอแนวทาง แล้วตัดสินใจ</td></tr>
+      <tr><td class="c">5</td><td>Generate Quality Attribute Utility Tree</td><td>map requirement → quality attribute เป็นต้นไม้</td></tr>
+      <tr><td class="c">6</td><td>Brainstorm Scenarios</td><td>กลุ่ม stakeholder ใหญ่ร่วมเสนอ scenario</td></tr>
+      <tr><td class="c">7</td><td>Analyze Architectural Approaches</td><td>จัดลำดับ scenario แล้ว map ตัวที่สำคัญลงสถาปัตยกรรม</td></tr>
+      <tr><td class="c">8</td><td>Present Results</td><td>สรุป risks, non-risks, sensitivities, tradeoffs, risk themes ส่งเอกสาร</td></tr>
+    </table></div>
+    <h3 style="margin-top:16px">Availability: คำนวณเวลาหยุด</h3>
+    <p>Downtime ต่อปี = (1 − A) × 525,600 นาที</p>
+    <div class="tbl"><table>
+      <tr><th>Availability</th><th>Downtime/ปี</th></tr>
+      <tr><td>99% (two nines)</td><td>≈ 3.65 วัน (87.6 ชม.)</td></tr>
+      <tr><td>99.9% (three nines)</td><td>≈ 8.76 ชม.</td></tr>
+      <tr><td><span class="hot">99.99% (four nines)</span></td><td>≈ 52.56 นาที (สไลด์: 52 นาที)</td></tr>
+      <tr><td>99.999% (five nines)</td><td>≈ 5.26 นาที</td></tr>
+    </table></div>
+    <ul>
+      <li>ASRs = requirement ที่มีผลต่อโครงสร้าง · กำหนด NFR ให้วัดได้ เช่น 10,000 write/s, P99 &lt; 200 ms · System boundaries เช่นใช้ Stripe แทนสร้างเอง</li>
+      <li>Pattern: <b>Layered/N-Tier</b> (เหมาะแอปเล็ก-กลาง แต่ schema ผูกแน่น) · <span class="hot">Hexagonal = Ports and Adapters</span> แยก business logic ออกจาก framework/DB (boilerplate มากช่วงแรก แต่เปลี่ยน DB ง่าย) · <b>Microservices &amp; EDA</b> (Kafka, RabbitMQ; ซับซ้อน, eventual consistency, debug ยาก)</li>
+      <li><b>C4 Model</b>: L1 <b>Context</b> (ผู้ใช้ + ระบบภายนอก) · L2 <b>Container</b> (runtime ที่ deploy แยก: web app, mobile, API, worker, DB) · L3 <b>Component</b> (ภายใน container) · L4 <b>Code</b> (class diagram มักสร้างอัตโนมัติหรือข้าม)</li>
+      <li><b>ADR</b>: เก็บใน repo เป็น markdown ประกอบด้วย Title, Status (<b>Proposed / Accepted / Superseded</b>), Context, Decision, Consequences</li>
+      <li><b>Walking Skeleton</b>: slice end-to-end บาง ๆ ก่อน (ปุ่ม UI → API → เขียนแถว placeholder ลง DB) เพื่อพิสูจน์ว่า “ท่อ” ทำงาน</li>
+      <li><b>Fitness Functions</b>: เทสต์อัตโนมัติบังคับขอบเขตสถาปัตยกรรม เช่น <b>ArchUnit</b> ทำให้ CI/CD fail ถ้า DB component import UI</li>
+      <li>Evolutionary architecture: review สม่ำเสมอ ติดตาม metric ช่วง peak พร้อม refactor</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= MCQ ================= -->
+<section class="pane" id="mcq" hidden>
+  <h2>ส่วนที่ 1 · ปรนัยจำลอง</h2>
+  <p class="note" style="margin:0">กดเลือกคำตอบแล้วจะเฉลยทันที เลือกได้ครั้งเดียวต่อข้อ ระบบจำคำตอบไว้ในเบราว์เซอร์นี้</p>
+  <div class="bar">
+    <span class="score" id="mcqScore">0 / 0</span>
+    <span class="note" id="mcqDone"></span>
+    <div class="filters" id="mcqFilters"></div>
+    <button class="btn ghost" id="mcqReset" type="button">เริ่มใหม่</button>
+  </div>
+  <div id="mcqList" style="display:flex;flex-direction:column;gap:14px"></div>
+</section>
+
+<!-- ================= FILL ================= -->
+<section class="pane" id="fill" hidden>
+  <h2>ส่วนที่ 2 · เติมคำจำลอง</h2>
+  <div class="card">
+    <h3>คลังคำศัพท์</h3>
+    <p class="note">ใช้ได้คำละครั้ง ไม่จำเป็นต้องใช้ครบ ตอบเป็นหมายเลข</p>
+    <div class="bank" id="bank"></div>
+  </div>
+  <div class="card">
+    <div class="fill" id="fillList"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center">
+      <button class="btn" id="fillCheck" type="button">ตรวจคำตอบ</button>
+      <button class="btn ghost" id="fillReset" type="button">ล้าง</button>
+      <span class="score" id="fillScore"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ESSAY ================= -->
+<section class="pane" id="essay" hidden>
+  <h2>ส่วนที่ 3 · อัตนัยจำลอง</h2>
+  <p class="note" style="margin:0">ลองเขียนคำตอบในช่องก่อน แล้วค่อยเปิดแนวคำตอบเทียบ ร่างของคุณจะถูกจำไว้ในเบราว์เซอร์นี้</p>
+
+  <div class="card">
+    <span class="tag">ข้อ 1 · 10 คะแนน</span>
+    <h3>ออกแบบ Event-Driven และ CQRS</h3>
+    <div class="scen">คุณเป็นหัวหน้าสถาปนิกของแพลตฟอร์มสั่งอาหาร (คล้าย GrabFood/LINE MAN) ต้องรองรับการสั่งอาหาร แจ้งเตือนร้าน จัดหาไรเดอร์ ติดตามตำแหน่งแบบ real-time และชำระเงิน</div>
+    <ol class="parts" type="a">
+      <li>ระบุ event ที่เกิดในระบบอย่างน้อย 5 event (2 คะแนน)</li>
+      <li>ระบุ publisher และ subscriber ของแต่ละ event (3 คะแนน)</li>
+      <li>อธิบายการใช้ CQRS แยกฝั่งเขียนคำสั่งซื้อ (สั่ง/อัปเดต) ออกจากฝั่งอ่าน (ติดตาม/ประวัติ) (3 คะแนน)</li>
+      <li>ความท้าทายของ eventual consistency ในระบบนี้ และแนวทางจัดการ (2 คะแนน)</li>
+    </ol>
+    <textarea id="e1" placeholder="ร่างคำตอบข้อ 1..."></textarea>
+    <details>
+      <summary>ดูแนวคำตอบข้อ 1</summary>
+      <div class="ans">
+        <h4>(a) Events</h4>
+        <p><code>OrderPlaced</code>, <code>PaymentCompleted</code> (payload: orderId, amount), <code>OrderAcceptedByRestaurant</code>, <code>DriverAssigned</code>, <code>DriverLocationUpdated</code>, <code>FoodReadyForPickup</code>, <code>OrderDelivered</code>, <code>OrderCancelled</code></p>
+        <h4>(b) Publisher → Subscriber (ผ่าน Event Broker เช่น Kafka)</h4>
+        <div class="tbl"><table>
+          <tr><th>Event</th><th>Publisher</th><th>Subscribers</th></tr>
+          <tr><td>OrderPlaced</td><td>Order Service</td><td>Payment, Restaurant Notification, Order Read Model</td></tr>
+          <tr><td>PaymentCompleted</td><td>Payment Service</td><td>Order Service, Driver Assignment, Notification</td></tr>
+          <tr><td>OrderAcceptedByRestaurant</td><td>Restaurant Service</td><td>Order Service, Customer Notification</td></tr>
+          <tr><td>DriverAssigned</td><td>Driver Assignment Service</td><td>Tracking, Customer &amp; Restaurant Notification</td></tr>
+          <tr><td>DriverLocationUpdated</td><td>Driver App / Tracking Service</td><td>Tracking Read Model, Customer App</td></tr>
+          <tr><td>OrderDelivered</td><td>Driver Service</td><td>Order, Payment (จ่ายร้าน/ไรเดอร์), Rating, History</td></tr>
+        </table></div>
+        <p>จุดให้คะแนน: บอกว่า publisher ส่งไปที่ broker และ subscriber รับเฉพาะ event ที่ลงทะเบียน หนึ่ง event มีหลาย subscriber ได้ (loose coupling)</p>
+        <h4>(c) CQRS</h4>
+        <ul>
+          <li><b>Command side</b>: <code>PlaceOrder</code>, <code>CancelOrder</code>, <code>UpdateOrderStatus</code> เข้า Command Service ตรวจ business rule (ร้านเปิดไหม, สต็อก, ยอดเงิน) แล้วเขียนลง <b>Write DB</b> (relational, ACID) ซึ่งเป็น source of truth</li>
+          <li>หลังเขียนสำเร็จสร้าง event (OrderPlaced/StatusChanged) ลง event bus</li>
+          <li><b>Query side</b>: projection ฟัง event แล้วอัปเดต <b>Read DB</b> ที่ออกแบบเพื่ออ่าน เช่น Redis สำหรับสถานะ/ตำแหน่งล่าสุด และ document DB/Elasticsearch สำหรับประวัติการสั่ง (materialized view รวมชื่อร้าน เมนู ไรเดอร์ไว้แล้ว)</li>
+          <li>Query Service ตอบหน้า tracking และประวัติจาก Read DB อย่างเดียว ทำให้ scale ฝั่งอ่าน (อ่านมากกว่าเขียนมาก) แยกจากฝั่งเขียนได้</li>
+        </ul>
+        <h4>(d) Eventual consistency</h4>
+        <ul>
+          <li>ปัญหา: ลูกค้าเพิ่งสั่งแต่หน้าประวัติยังไม่ขึ้น · สถานะในแอปไม่ตรงกับจริงชั่วคราว · event มาไม่เรียงลำดับ (Delivered มาก่อน PickedUp) · event ซ้ำทำให้ตัดเงินซ้ำ</li>
+          <li>แนวทาง: ตอบกลับ UI ด้วยผลจาก command ทันที (optimistic UI / read-your-own-writes) · ใส่ version/sequence number และใช้ partition key = orderId ให้เรียงลำดับ · consumer แบบ idempotent (เก็บ eventId ที่ประมวลแล้ว) · retry + dead-letter queue · ใช้ Saga/compensating event (เช่น PaymentFailed → CancelOrder) · monitor ความหน่วงของ projection</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+
+  <div class="card">
+    <span class="tag">ข้อ 2 · 15 คะแนน</span>
+    <h3>การประเมินสถาปัตยกรรม</h3>
+    <div class="scen">มหาวิทยาลัยมีระบบลงทะเบียนเรียนออนไลน์แบบ 3-tier (web, application server เครื่องเดียว, ฐานข้อมูลเดียว) ทุกต้นภาคเรียนมีนักศึกษาราว 20,000 คนเข้าพร้อมกันในชั่วโมงแรก ระบบช้ามากจนล่มทุกปี และเคยพบนักศึกษาดูข้อมูลผลการเรียนของคนอื่นได้ ผู้บริหารต้องการประเมินสถาปัตยกรรมก่อนตัดสินใจลงทุนปรับปรุง</div>
+    <ol class="parts" type="a">
+      <li>เลือกเกณฑ์ประเมิน 3 จาก 5 ข้อ (Performance, Scalability, Reliability, Maintainability, Security) พร้อมตัวอย่างที่วัดได้ของแต่ละเกณฑ์ (6 คะแนน)</li>
+      <li>อธิบายจุดประสงค์ของ ATAM และกลุ่มผู้เข้าร่วม (5 คะแนน)</li>
+      <li>เลือกเครื่องมือประเมิน 1 ตัว พร้อมเหตุผลที่เหมาะกับสถานการณ์ (4 คะแนน)</li>
+    </ol>
+    <textarea id="e2" placeholder="ร่างคำตอบข้อ 2..."></textarea>
+    <details>
+      <summary>ดูแนวคำตอบข้อ 2</summary>
+      <div class="ans">
+        <h4>(a) เกณฑ์ 3 ข้อ + ตัวชี้วัด (ต้องมีตัวเลข)</h4>
+        <ul>
+          <li><b>Performance</b>: response time หน้าลงทะเบียน P99 &lt; 2 วินาทีที่ 20,000 concurrent users · throughput ≥ 1,500 transactions/วินาที · CPU utilization &lt; 70% ตอน peak</li>
+          <li><b>Scalability</b>: เพิ่ม app server แบบ horizontal จาก 2 → 10 instance ได้ภายใน 5 นาทีผ่าน auto-scaling โดย response time ไม่เกินเกณฑ์ · ระบบ (ปัจจุบัน server เครื่องเดียว) ต้องรองรับโหลด 2 เท่าของ peak ปีที่แล้ว</li>
+          <li><b>Security</b>: authorization ทุก API ตรวจว่า studentId ใน token ตรงกับข้อมูลที่ขอ (กรณีเห็นเกรดคนอื่น = broken access control) · ช่องโหว่ระดับ High/Critical จากการสแกน = 0 · ข้อมูลเข้ารหัส TLS ระหว่างทางและ at rest</li>
+          <li>(ทางเลือก) <b>Reliability</b>: availability ช่วงเปิดลงทะเบียน ≥ 99.9% (downtime ≤ ~43 นาที/เดือน) · RTO ≤ 15 นาที</li>
+        </ul>
+        <h4>(b) ATAM</h4>
+        <ul>
+          <li>จุดประสงค์: ประเมินว่าสถาปัตยกรรมตอบ quality attribute ที่ธุรกิจต้องการได้หรือไม่ ตั้งแต่ช่วงต้นก่อนลงทุน หา <b>risks, non-risks, sensitivity points, trade-offs</b> (เช่น เพิ่ม cache ช่วย performance แต่เสี่ยงข้อมูลที่นั่งไม่ตรง) แล้วสรุปเป็น risk themes เพื่อลดความเสี่ยง</li>
+          <li>กระบวนการ 8 ขั้น: Present ATAM → Business Drivers → Architecture → Architectural Approaches → Utility Tree → Brainstorm Scenarios → Analyze → Present Results</li>
+          <li>ผู้เข้าร่วม 3 กลุ่ม: <b>Evaluation team</b> คนนอกโปรเจกต์ 3–5 คน · <b>Project decision-makers</b> เช่น ผู้อำนวยการสำนักทะเบียน/ผู้บริหารไอทีที่มีอำนาจสั่งเปลี่ยน · <b>Stakeholders</b> เช่น นักศึกษา (users), อาจารย์, เจ้าหน้าที่ทะเบียน, developers, testers, ผู้ดูแลระบบ (maintainers), performance engineers</li>
+        </ul>
+        <h4>(c) เครื่องมือ: Apache JMeter</h4>
+        <ul>
+          <li>ปัญหาหลักคือระบบล่มเมื่อผู้ใช้พร้อมกันจำนวนมาก JMeter จำลอง 20,000 virtual users ยิงลำดับ login → ค้นวิชา → ลงทะเบียน ได้จริง</li>
+          <li>วัด response time, throughput, error rate ทำ load test และ stress test หา breaking point และคอขวด (app server เดี่ยวหรือ DB) ก่อนเปิดลงทะเบียนจริง</li>
+          <li>เป็น open-source ไม่มีค่า license เหมาะงบมหาวิทยาลัย และใส่ใน CI/CD ได้</li>
+          <li>(ถ้าเลือกด้านความปลอดภัยแทน: OWASP ZAP สแกนเว็บหาช่องโหว่อย่าง broken access control ได้ฟรี)</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+</section>
+</main>
+
+<script>
+(function(){
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- tabs ---------- */
+const tabs=[...document.querySelectorAll('nav.tabs button')];
+function show(id){
+  if(!document.getElementById(id))id='summary';
+  tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===id));
+  document.querySelectorAll('section.pane').forEach(s=>s.hidden=s.id!==id);
+}
+tabs.forEach(b=>b.addEventListener('click',()=>{show(b.dataset.tab);try{history.replaceState(null,'','#'+b.dataset.tab)}catch(e){}window.scrollTo({top:document.querySelector('nav.tabs').offsetTop-1})}));
+show((location.hash||'').slice(1)||'summary');
+
+/* ---------- MCQ ---------- */
+const L='ABCDE';
+const Q=[
+// MVC
+["MVC","ผู้คิดค้นสถาปัตยกรรม MVC คือใคร และพัฒนาที่ใด",["Martin Fowler ที่ ThoughtWorks","Alan Kay ที่ Apple","Trygve Reenskaug ที่ Xerox PARC","Grady Booch ที่ IBM","Erich Gamma ที่ Bell Labs"],2,"Trygve Reenskaug สร้าง MVC ปี 1979 ที่ Xerox PARC สำหรับ Smalltalk-76"],
+["MVC","เป้าหมายดั้งเดิมของ MVC คือข้อใด",["ลดค่าใช้จ่ายเซิร์ฟเวอร์","แก้ปัญหาการควบคุมชุดข้อมูลขนาดใหญ่และซับซ้อน และเชื่อม mental model ของมนุษย์กับ GUI","ทำให้ระบบกระจายตัวหลายเครื่อง","เพิ่มความเร็วฐานข้อมูล","รองรับการทำงานบน cloud"],1,"สไลด์ระบุว่าสร้างเพื่อแก้ปัญหาการควบคุม dataset ใหญ่และซับซ้อน และ bridge mental model กับ GUI"],
+["MVC","ข้อใดเป็นหน้าที่ของ Controller",["เก็บกฎทางธุรกิจและติดต่อฐานข้อมูล","กำหนดสี ธีม และ layout ของหน้าจอ","รับ input ของผู้ใช้ แปลงเป็นคำสั่งให้ Model แล้วเลือก View ที่จะแสดง","เข้ารหัสข้อมูลก่อนเก็บ","สำรองข้อมูลอัตโนมัติ"],2,"Controller เป็นตัวกลาง (mediator) และ routing logic"],
+["MVC","ข้อใด “ไม่” สอดคล้องกับข้อกำหนดตามแผนภาพ MVC ในสไลด์",["Model ติดต่อกับฐานข้อมูล","View แสดงผลแบบ dynamic","Controller ประมวลผล data logic เองโดยตรง","Model ยังทำงานได้แม้ถอด View และ Controller ออก","View ส่ง action ผู้ใช้ต่อให้ Controller"],2,"แผนภาพเขียนชัดว่า Controller “Never handles data logic”"],
+["MVC","ประโยชน์ด้าน Testability ของ MVC หมายถึงข้อใด",["ทดสอบ UI โดยไม่ต้องมีฐานข้อมูล","ทดสอบ business logic ใน Model ได้โดยไม่ต้องมี UI จริง","ไม่ต้องเขียน unit test","ทดสอบได้เฉพาะบน production","ทดสอบเฉพาะ Controller เท่านั้น"],1,"Model และ Controller ทดสอบด้วย unit test ได้โดยไม่ต้องเปิดเบราว์เซอร์"],
+["MVC","ไฟล์ checkout ไฟล์เดียว 2,500 บรรทัดที่รวม SQL, คำนวณส่วนลด, เรียก payment API และต่อ string HTML ไว้ด้วยกัน มีปัญหาหลักคือข้อใด",["ใช้ฐานข้อมูลผิดประเภท","high coupling และขาด separation of concerns","ไม่ได้อยู่บน cloud","ใช้ภาษาโปรแกรมผิด","มี View มากเกินไป"],1,"ทุกหน้าที่ผูกกันในไฟล์เดียว แก้จุดหนึ่งกระทบทั้งหมด ทดสอบยาก"],
+["MVC","ในแบบฝึก C++ Student ถ้าต้องเปลี่ยนการแสดงผลจาก cout เป็นหน้าเว็บ ต้องแก้คลาสใด",["Student","StudentController","StudentView","retriveStudentFromDatabase","ต้องแก้ทุกคลาส"],2,"การแสดงผลอยู่ใน View เท่านั้น Model และ Controller ไม่ต้องเปลี่ยน"],
+// Cloud
+["Cloud","ในโมเดล IaaS ลูกค้าต้องดูแลชั้นใด",["Servers และ Storage","Virtualization และ Networking","O/S, Middleware, Runtime, Data และ Applications","เฉพาะผู้ใช้และข้อมูล","ไม่ต้องดูแลอะไรเลย"],2,"IaaS ผู้ให้บริการดูแล Virtualization ลงไป ลูกค้าดูแลตั้งแต่ O/S ขึ้นมา"],
+["Cloud","ในโมเดล PaaS ลูกค้าดูแลเฉพาะข้อใด",["Applications และ Data","O/S และ Runtime","Servers และ Storage","ทุกชั้น","Networking"],0,"PaaS ผู้ให้บริการดูแลตั้งแต่ Runtime ลงไป"],
+["Cloud","องค์กรใช้บริการจาก AWS และ Azure พร้อมกันเพื่อหลีกเลี่ยง vendor lock-in เป็น deployment model ใด",["Public Cloud","Private Cloud","Hybrid Cloud","Multi-Cloud","Community Cloud"],3,"Multi-Cloud ใช้หลายผู้ให้บริการ ต่างจาก Hybrid ที่รวม public กับ private"],
+["Cloud","ข้อใดคือ “Infrastructure as hardware”",["ปรับเปลี่ยนได้รวดเร็ว","จ่ายตามการใช้งาน","ต้องเดาความจุสูงสุดล่วงหน้าและมีรอบจัดซื้อยาว","จัดการผ่านโค้ดและ toolchain","ไม่ต้องมีพื้นที่ติดตั้ง"],2,"ฮาร์ดแวร์ต้องใช้พื้นที่ คน งบลงทุน และต้อง provision ตาม peak ที่เดาไว้"],
+["Cloud","ข้อใดไม่ใช่เสาหลักของ Well-Architected Framework",["Operational Excellence","Sustainability","Cost Optimization","Interoperability","Reliability"],3,"6 เสา: Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization, Sustainability"],
+["Cloud","การ scale แบบ horizontal ต้องอาศัยข้อใด",["CPU ที่แรงขึ้น","การออกแบบ stateless และ load balancing","ฐานข้อมูลเดียวขนาดใหญ่","การหยุดระบบชั่วคราว","Private cloud เท่านั้น"],1,"เพิ่ม instance ได้ต่อเมื่อแอปไม่เก็บ state ไว้ในเครื่องและมี LB กระจายโหลด"],
+["Cloud","ความสามารถในการเพิ่ม/ลดทรัพยากรอัตโนมัติตาม demand เรียกว่าอะไร",["Elasticity","Redundancy","Vertical scaling","Maturity","Portability"],0,"Elasticity เช่น auto-scaling group, Kubernetes HPA, serverless"],
+["Cloud","Circuit Breaker มีไว้เพื่ออะไร",["เข้ารหัสข้อมูล","กระจายทราฟฟิก","หยุดเรียก service ที่ล้มชั่วคราวเพื่อป้องกัน cascading failure","สำรองข้อมูลข้าม region","ลดค่าใช้จ่าย"],2,"ตัดวงจรเมื่อ service ปลายทางล้ม ไม่ให้ความล้มเหลวลามทั้งระบบ"],
+["Cloud","การจงใจทำให้ระบบล้มเพื่อทดสอบความทนทาน เช่น Chaos Monkey เรียกว่าอะไร",["Load Testing","Chaos Engineering","Penetration Testing","Blue-Green Deployment","Right-Sizing"],1,"Chaos Engineering"],
+["Cloud","ย้าย CRM ภายในองค์กรไปใช้ Salesforce เป็นกลยุทธ์ migration แบบใด",["Rehost","Replatform","Refactor","Repurchase","Retain"],3,"Repurchase = ย้ายไปผลิตภัณฑ์อื่น มักเป็น SaaS"],
+["Cloud","Observability ประกอบด้วย 3 pillars ใด",["CPU, RAM, Disk","Metrics, Logs, Traces","Code, Build, Deploy","IaaS, PaaS, SaaS","Alerts, Budgets, Reports"],1,"Metrics, logs, traces เครื่องมือเช่น CloudWatch, Grafana, Datadog, OpenTelemetry"],
+["Cloud","ตาม Shared Responsibility Model ข้อใดเป็นความรับผิดชอบของลูกค้า",["ความปลอดภัยทางกายภาพของ data center","ฮาร์ดแวร์เซิร์ฟเวอร์","ข้อมูล แอปพลิเคชัน และ configuration ของตน","สายเคเบิลเครือข่าย","ระบบไฟฟ้าสำรอง"],2,"Provider ดูแลโครงสร้างพื้นฐาน ลูกค้าดูแลข้อมูล แอป และการตั้งค่า"],
+// Grid
+["Grid","ชั้นใดของ Grid ทำหน้าที่ค้นหาทรัพยากร จัดตารางงาน และกระจายโหลดทั่วทั้ง grid",["Application","Collective","Resource","Connectivity","Fabric"],1,"Collective Layer: directory services, co-allocation, monitoring, replication"],
+["Grid","Authentication และโปรโตคอล TLS อยู่ในชั้นใด",["Fabric","Resource","Connectivity","Collective","Application"],2,"Connectivity Layer"],
+["Grid","Grid ที่เชื่อม storage กระจายตัวให้หลายองค์กรแชร์และวิเคราะห์ dataset ขนาดใหญ่เป็น pool เดียว คือประเภทใด",["Computational Grid","Collaborative Grid","Data Grid","Edge Grid","Service Grid"],2,"Data Grid"],
+// Edge
+["Edge","ในกรอบ Edge 3 ชั้น ชั้นใดประมวลผล กรอง และวิเคราะห์ข้อมูลใกล้แหล่งกำเนิดแบบ real-time",["Device Layer","Edge Layer","Cloud Layer","Fabric Layer","Presentation Layer"],1,"Edge Layer (local processing) เช่น gateway, local server"],
+["Edge","IoT Gateway Pattern ช่วยลด bandwidth ได้ถึงประมาณเท่าใด",["10%","30%","50%","70%","90%"],4,"รวมและกรองข้อมูลแล้วส่งเฉพาะสรุป ลดได้ถึง 90%"],
+["Edge","ตามตารางเปรียบเทียบ latency ของ Edge อยู่ในช่วงใด",["1–10 ms","50–200 ms","200–500 ms","1–2 วินาที","ไม่แน่นอน"],0,"Edge 1–10 ms, Cloud 50–200 ms"],
+// Micro / Distributed
+["Microservices","หลัก Database per Microservice ให้ประโยชน์ใดเป็นหลัก",["ทุก service อ่านตารางเดียวกันได้สะดวก","ลดจำนวนฐานข้อมูล","Data isolation, loose coupling และ scale ได้อิสระ","บังคับ ACID ข้าม service","ไม่ต้องสื่อสารระหว่าง service"],2,"แต่ละ service เป็นเจ้าของข้อมูลของตัวเอง"],
+["Microservices","ส่วนประกอบใดเป็นจุดเข้าเดียว route request ไปยัง service ที่ถูกต้อง และจัดการ authentication",["Service Registry","Load Balancer","Message Broker","API Gateway","Cache"],3,"API Gateway"],
+["Microservices","สถานการณ์ใดเหมาะกับ Monolith มากกว่า Microservices",["ต้องการ fault isolation สูง","ใช้หลาย technology stack","ทีมพัฒนามีทรัพยากรจำกัดและแอปเล็กเรียบง่าย","ตลาดเปลี่ยนแปลงตลอดเวลา","ต้อง deploy บ่อยมาก"],2,"Monolith: แอปเล็ก ทีมน้อย ความซับซ้อนต่ำ ไม่เปลี่ยนบ่อย"],
+["Distributed","ลักษณะของสถาปัตยกรรม Peer-to-Peer คือข้อใด",["มี central server ควบคุม","ทุกโหนดเท่าเทียม เป็นทั้ง client และ server","สื่อสารผ่าน ESB","ข้อมูลอยู่ที่ repository กลาง","แบ่งเป็นชั้นซ้อนกัน"],1,"ไม่มี central server ทนต่อ single point of failure แบ่งเป็น Structured / Unstructured / Hybrid"],
+["Distributed","คุณลักษณะใดของระบบกระจายที่ซ่อนความซับซ้อนของเครือข่ายให้ผู้ใช้เห็นเป็นระบบเดียว",["Scalability","Resource Sharing","Fault Tolerance","Transparency","Multiple Nodes"],3,"Transparency"],
+["Microservices","ใน Netflix ส่วนใดทำหน้าที่ circuit breaker",["Zuul","Eureka","Hystrix","Chaos Monkey","Kubernetes"],2,"Zuul=gateway, Eureka=discovery, Hystrix=circuit breaker, Chaos Monkey=resilience test"],
+// EDA
+["EDA","จากแผนภาพ EDA (Source1 ส่ง A, Source2 ส่ง B) Subscriber2 ที่ subscribe A+B จะได้รับ event จากใด",["Source1 เท่านั้น","Source2 เท่านั้น","ทั้ง Source1 และ Source2 ผ่าน Event Broker","รับตรงจาก source โดยไม่ผ่าน broker","ไม่ได้รับเลย"],2,"Broker ส่ง A และ B ให้ Subscriber2 ตามที่ลงทะเบียนไว้"],
+["EDA","ข้อมูลเพิ่มเติมที่แนบมากับ event เช่นจำนวนเงินใน PaymentReceived เรียกว่าอะไร",["Header","Payload","Topic","Schema","Offset"],1,"Payload ให้บริบทของ event"],
+["EDA","ข้อใดเป็นหน้าที่ของ Event Broker",["สร้าง event เมื่อสถานะเปลี่ยน","เป็นศูนย์กลางจัดการการสื่อสาร event ระหว่าง publisher และ subscriber","แสดงผลให้ผู้ใช้","เก็บข้อมูลถาวรเป็น source of truth","ประมวลผล query"],1,"Event Broker = central hub"],
+["EDA","สถานการณ์ใด “ไม่” เหมาะกับ EDA",["หลาย subsystem ต้องประมวล event เดียวกัน","ข้อมูล IoT ปริมาณและความเร็วสูง","Complex event processing แบบ time window","แอปฟอร์มเล็ก ๆ ผู้ใช้น้อย ต้องการคำตอบแบบ synchronous ทันที","ตรวจจับ fraud แบบ real-time"],3,"EDA เพิ่มความซับซ้อนและ latency งานเล็ก synchronous ไม่คุ้ม"],
+["EDA","เหตุใดการ debug และ trace ใน EDA จึงยาก",["ไม่มี log","ระบบเป็น asynchronous และกระจายตัว ทำให้ตามเส้นทาง event ข้าม component ยาก","ใช้ฐานข้อมูลเดียว","ไม่มี event broker","โค้ดอยู่ไฟล์เดียว"],1,"แก้ด้วย correlation ID และ distributed tracing"],
+// CQRS
+["CQRS","CQRS แยกสิ่งใดออกจากกัน",["Frontend กับ Backend","Command (เขียน) กับ Query (อ่าน)","Cloud กับ Edge","Model กับ View","Publisher กับ Subscriber"],1,"Command Query Responsibility Segregation"],
+["CQRS","ใน CQRS ข้อใดเป็น source of truth",["Read Storage","Cache","Write Storage","Query Service","UI"],2,"Write Storage เก็บข้อมูลที่ถือเป็นทางการ"],
+["CQRS","ลำดับการ sync ข้อมูลใน CQRS ข้อใดถูกต้อง",["Update Read DB → Write Command DB → Generate Events","Generate Events → Write Command DB → Update Read DB","Write Command DB → Generate Events → Update Query DB → Eventual Consistency","Update Query DB → Eventual Consistency → Write Command DB","Write Command DB → Update Query DB พร้อมกันใน transaction เดียว"],2,"4 ขั้นตามสไลด์"],
+["CQRS","Eventual consistency ใน CQRS หมายถึงข้อใด",["Read DB อัปเดตพร้อม Write DB ทุกครั้ง","Read DB อาจล่าช้าเล็กน้อย แต่สุดท้ายข้อมูลจะตรงกัน","ข้อมูลไม่มีวันตรงกัน","ต้องล็อกทั้งสองฐานข้อมูล","ใช้ฐานข้อมูลเดียว"],1,"ยอมให้ช้าชั่วคราวแลกกับ scalability"],
+["CQRS","กรณีใดที่ CQRS เกินความจำเป็น (overkill)",["ระบบ CRUD เรียบง่าย โหลดต่ำ","Read/write ไม่สมดุลมาก","Query ซับซ้อนมาก","ต้อง scale อ่านและเขียนแยกกัน","Data model อ่านกับเขียนต่างกันมาก"],0,"Best practice: ระบบง่ายใช้ CQRS เพิ่ม overhead โดยไม่จำเป็น"],
+// Tools
+["Tools","เครื่องมือใดใช้ภาษา DOT และเป็น engine ให้เครื่องมืออื่น",["Mermaid","Draw.io","Graphviz","Gaphor","D2"],2,"Graphviz"],
+["Tools","เครื่องมือ desktop สำหรับ UML 2, SysML, RAAML และ C4 แบบเคร่งครัดมาตรฐาน คือข้อใด",["Gaphor","PlantUML","Mermaid","Draw.io","Graphviz"],0,"Gaphor"],
+["Tools","แพลตฟอร์มลากวางที่มี template AWS/Azure/GCP/IBM และแก้ไขร่วมกัน real-time คือข้อใด",["D2","Graphviz","PlantUML","Draw.io","Gaphor"],3,"Draw.io"],
+["Tools","ตามตารางเปรียบเทียบ เครื่องมือใดรองรับ real-time collaboration แต่ไม่มี drag-and-drop",["Graphviz","PlantUML","Mermaid","Gaphor","Draw.io"],2,"Mermaid: code Yes, D&D No, collab Yes, web Yes"],
+// Fundamentals
+["พื้นฐาน","ข้อใดอธิบายความต่างระหว่าง Layers และ Tiers ได้ถูกต้อง",["Layers คือเครื่องจริง Tiers คือโค้ด","Layers จัดโค้ดเชิงตรรกะ Tiers คือการ deploy ทางกายภาพ","เหมือนกันทุกประการ","Layers ใช้กับ cloud เท่านั้น","Tiers ใช้กับ MVC เท่านั้น"],1,"Layers = logical, Tiers = physical"],
+["พื้นฐาน","จำนวนธุรกรรมที่ระบบรองรับได้ในช่วงเวลาหนึ่ง คือตัวชี้วัดใด",["Latency","Response time","Throughput","Availability","Elasticity"],2,"Throughput"],
+["พื้นฐาน","กรอบใดทำหน้าที่เป็น quality gate ด่านสุดท้ายก่อนขึ้นระบบจริง ด้วย load test และ chaos test",["TOGAF","Zachman","Production Readiness Review (PRR)","ATAM","SysML"],2,"PRR"],
+["พื้นฐาน","Observer, Strategy และ Command อยู่ในหมวด design pattern ใด",["Creational","Structural","Behavioral","Architectural","Concurrency"],2,"Behavioral = การโต้ตอบและความรับผิดชอบของ object"],
+["พื้นฐาน","เครื่องมือใดเหมาะประเมิน maintainability โดยตรวจ bugs และ code smells อย่างต่อเนื่อง",["Apache JMeter","Burp Suite","Hotjar","SonarQube","Nessus"],3,"SonarQube"],
+// ATAM & practices
+["ATAM","ข้อใด “ไม่ใช่” กลุ่มผู้เข้าร่วม ATAM",["Evaluation team","Project decision-makers","Architecture stakeholders","ทีมขายของผู้ขายซอฟต์แวร์คู่แข่ง","ทั้ง A–C เป็นกลุ่มที่ต้องมี"],3,"3 กลุ่ม: evaluation team, decision-makers, stakeholders"],
+["ATAM","ทีมประเมินใน ATAM มีลักษณะใด",["คนในโปรเจกต์ 10 คนขึ้นไป","คนนอกโปรเจกต์ 3–5 คน","ผู้บริหารเพียงคนเดียว","developer ทั้งหมด","ลูกค้า 1–2 คน"],1,"Evaluation team เป็นคนภายนอก 3–5 คน"],
+["ATAM","ใน ATAM “risk” หมายถึงข้อใด",["บั๊กในโค้ด","การตัดสินใจทางสถาปัตยกรรมที่อาจนำไปสู่ผลไม่พึงประสงค์ต่อ quality attribute","ค่าใช้จ่ายเกินงบ","ความล่าช้าของทีม","การตัดสินใจที่ไม่คาดว่าจะเกิดผลเสีย"],1,"ตัวเลือก E คือ non-risk"],
+["ATAM","ขั้นตอนใดของ ATAM ที่กลุ่ม stakeholder ใหญ่ร่วมเสนอ scenario และข้อกังวล",["Present ATAM","Generate Quality Attribute Utility Tree","Brainstorm Scenarios","Present Results","Present Architecture"],2,"Brainstorm Scenarios"],
+["ATAM","ระบบตั้งเป้า availability 99.99% จะหยุดทำงานได้ไม่เกินประมาณเท่าใดต่อปี",["5 นาที","52 นาที","8.76 ชั่วโมง","3.65 วัน","1 วัน"],1,"(1−0.9999)×525,600 ≈ 52.56 นาที"],
+["ATAM","รูปแบบสถาปัตยกรรมที่แยก business logic ออกจาก framework และฐานข้อมูลด้วย ports and adapters คือข้อใด",["Layered","Hexagonal","Microservices","Client-Server","Peer-to-Peer"],1,"Hexagonal Architecture"],
+["ATAM","ระดับใดของ C4 Model ที่แยกระบบเป็น runtime ที่ deploy ได้แยก เช่น web app, API server, database",["Level 1 Context","Level 2 Container","Level 3 Component","Level 4 Code","Level 0 Landscape"],1,"Container"],
+["ATAM","ข้อใดเป็นค่า Status ใน Architecture Decision Record ตามสไลด์",["Open / Closed / Merged","Proposed / Accepted / Superseded","Draft / Review / Published","Todo / Doing / Done","Low / Medium / High"],1,"ADR: Title, Status, Context, Decision, Consequences"],
+["ATAM","Walking Skeleton คือข้อใด",["แผนภาพ C4 ระดับ 1","slice end-to-end บาง ๆ ที่ใช้งานได้จริงเพื่อพิสูจน์ว่าท่อทั้งระบบเชื่อมกัน","ชุดเทสต์อัตโนมัติบังคับขอบเขต","เอกสารบันทึกการตัดสินใจ","โครงฐานข้อมูลเปล่า"],1,"เช่น ปุ่ม UI → API → เขียนแถว placeholder ลง DB"],
+["ATAM","การเขียนเทสต์ด้วย ArchUnit ให้ CI/CD fail เมื่อ DB component import UI คือแนวปฏิบัติใด",["Walking Skeleton","ADR","Fitness Functions","Chaos Engineering","Utility Tree"],2,"Fitness Functions"]
+];
+const topics=['ทั้งหมด',...new Set(Q.map(q=>q[0]))];
+let filter='ทั้งหมด';
+let ans=store.get('sa-mcq',{});
+const list=document.getElementById('mcqList');
+function renderMCQ(){
+  list.innerHTML='';
+  Q.forEach((q,i)=>{
+    if(filter!=='ทั้งหมด'&&q[0]!==filter)return;
+    const d=document.createElement('div');d.className='q';
+    const chosen=ans[i];
+    let h=`<div class="meta"><span>ข้อ ${i+1}</span><span>${q[0]}</span></div><p class="stem">${q[1]}</p><div class="opts">`;
+    q[2].forEach((o,j)=>{
+      let c='';if(chosen!==undefined){if(j===q[3])c='right';else if(j===chosen)c='wrong';}
+      h+=`<button type="button" class="opt ${c}" data-q="${i}" data-o="${j}" ${chosen!==undefined?'disabled':''}><span class="L">${L[j]}</span><span>${o}</span></button>`;
+    });
+    h+='</div>';
+    if(chosen!==undefined)h+=`<div class="exp"><b>${chosen===q[3]?'ถูก':'ผิด'} · เฉลย ${L[q[3]]}</b> — ${q[4]}</div>`;
+    d.innerHTML=h;list.appendChild(d);
+  });
+  const done=Object.keys(ans).length, right=Object.entries(ans).filter(([i,v])=>Q[i]&&Q[i][3]===v).length;
+  document.getElementById('mcqScore').textContent=`${right} / ${done}`;
+  document.getElementById('mcqDone').textContent=`ทำแล้ว ${done} จาก ${Q.length} ข้อ`;
+}
+list.addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b||b.disabled)return;ans[+b.dataset.q]=+b.dataset.o;store.set('sa-mcq',ans);renderMCQ();});
+const fwrap=document.getElementById('mcqFilters');
+topics.forEach(t=>{const c=document.createElement('button');c.type='button';c.className='chip';c.textContent=t;c.setAttribute('aria-pressed',t===filter);c.onclick=()=>{filter=t;[...fwrap.children].forEach(x=>x.setAttribute('aria-pressed',x===c));renderMCQ();};fwrap.appendChild(c);});
+document.getElementById('mcqReset').onclick=()=>{ans={};store.set('sa-mcq',ans);renderMCQ();};
+renderMCQ();
+
+/* ---------- FILL ---------- */
+const BANK=["Model","View","Controller","IaaS","PaaS","SaaS","Elasticity","Horizontal Scaling","Vertical Scaling","Collective Layer","Fabric Layer","Edge Layer","Fog Computing","API Gateway","Service Registry","Peer-to-Peer","Event Broker","Payload","Subscriber","Write Storage","Read Storage","Eventual Consistency","Sensitivity Point","Risk","Utility Tree","Walking Skeleton","Fitness Function","Multi-Cloud","Circuit Breaker","Transparency"];
+const F=[
+["ส่วนของ MVC ที่จัดการข้อมูลและ business logic และยังทำงานได้แม้ไม่มีส่วน UI คือ ____",1],
+["โมเดลบริการที่ผู้ให้บริการดูแลฮาร์ดแวร์และระบบปฏิบัติการ ลูกค้าดูแลเพียงโค้ดและข้อมูลของแอป คือ ____",5],
+["ความสามารถของระบบในการเพิ่มหรือลดทรัพยากรอัตโนมัติตามความต้องการ เรียกว่า ____",7],
+["การเพิ่มจำนวนเครื่อง (instance) เพื่อรับโหลด ซึ่งต้องออกแบบแอปแบบ stateless คือ ____",8],
+["ชั้นของสถาปัตยกรรม Grid ที่ค้นหาทรัพยากร จัดตารางงาน และกระจายโหลด คือ ____",10],
+["ชั้นในกรอบ Edge Computing ที่ประมวลผลและกรองข้อมูลใกล้แหล่งกำเนิดแบบ real-time คือ ____",12],
+["ใน Microservices ส่วนที่เป็นจุดเข้าเดียวของ client ทำหน้าที่ route request และตรวจ authentication คือ ____",14],
+["รูปแบบระบบกระจายที่ทุกโหนดเท่าเทียมและเป็นทั้ง client และ server คือ ____",16],
+["คุณลักษณะของระบบกระจายที่ซ่อนความซับซ้อนของเครือข่าย ทำให้ผู้ใช้เห็นเป็นระบบเดียว คือ ____",30],
+["ใน EDA องค์ประกอบที่เป็นศูนย์กลางรับส่ง event ระหว่าง publisher และ subscriber คือ ____",17],
+["ข้อมูลเพิ่มเติมที่แนบมากับ event เช่นจำนวนเงินใน PaymentReceived เรียกว่า ____",18],
+["ใน CQRS ฐานข้อมูลที่ทำหน้าที่เป็น source of truth คือ ____",20],
+["สภาวะที่ฐานข้อมูลฝั่งอ่านไม่ได้อัปเดตทันที แต่สุดท้ายข้อมูลจะตรงกับฝั่งเขียน เรียกว่า ____",22],
+["ใน ATAM การตัดสินใจทางสถาปัตยกรรมที่อาจนำไปสู่ผลไม่พึงประสงค์ต่อ quality attribute เรียกว่า ____",24],
+["การสร้าง slice แบบ end-to-end ที่บางที่สุดก่อน เพื่อพิสูจน์ว่าท่อของสถาปัตยกรรมทำงานได้ เรียกว่า ____",26]
+];
+document.getElementById('bank').innerHTML=BANK.map((w,i)=>`<span><i>${i+1}</i>${w}</span>`).join('');
+const fl=document.getElementById('fillList');
+let fv=store.get('sa-fill',{});
+fl.innerHTML=F.map((f,i)=>`<span class="n">${i+1}.</span><input id="f${i}" inputmode="numeric" maxlength="2" aria-label="คำตอบข้อ ${i+1}" value="${fv[i]||''}"><span class="s">${f[0]}<span class="fb" id="fb${i}"></span></span>`).join('');
+fl.addEventListener('input',e=>{if(e.target.id){fv[e.target.id.slice(1)]=e.target.value;store.set('sa-fill',fv);e.target.className='';}});
+document.getElementById('fillCheck').onclick=()=>{
+  let s=0;F.forEach((f,i)=>{const inp=document.getElementById('f'+i),v=parseInt(inp.value,10),ok=v===f[1];if(ok)s++;
+    inp.className=ok?'right':'wrong';
+    document.getElementById('fb'+i).textContent=ok?'ถูกต้อง':`เฉลย ${f[1]} · ${BANK[f[1]-1]}`;});
+  document.getElementById('fillScore').textContent=`${s} / ${F.length} คะแนน`;
+};
+document.getElementById('fillReset').onclick=()=>{fv={};store.set('sa-fill',fv);F.forEach((f,i)=>{const inp=document.getElementById('f'+i);inp.value='';inp.className='';document.getElementById('fb'+i).textContent='';});document.getElementById('fillScore').textContent='';};
+
+/* ---------- ESSAY drafts ---------- */
+['e1','e2'].forEach(id=>{const t=document.getElementById(id);t.value=store.get('sa-'+id,'');t.addEventListener('input',()=>store.set('sa-'+id,t.value));});
+})();
+</script>
+
+</body></html>
